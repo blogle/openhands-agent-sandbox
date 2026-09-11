@@ -65,7 +65,7 @@ func (h *Handler) RegisterProxy(mux *http.ServeMux, proxy http.Handler) {
 
 func (h *Handler) handleHealth(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
+	_ = json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
 }
 
 func (h *Handler) handleStart(w http.ResponseWriter, r *http.Request) {
@@ -99,7 +99,7 @@ func (h *Handler) handleStart(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(rt)
+	_ = json.NewEncoder(w).Encode(rt)
 }
 
 func (h *Handler) handleStop(w http.ResponseWriter, r *http.Request) {
@@ -120,7 +120,7 @@ func (h *Handler) handleStop(w http.ResponseWriter, r *http.Request) {
 
 	metrics.RequestsTotal.WithLabelValues("stop", "success").Inc()
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]string{"status": "stopped"})
+	_ = json.NewEncoder(w).Encode(map[string]string{"status": "stopped"})
 }
 
 func (h *Handler) handlePause(w http.ResponseWriter, r *http.Request) {
@@ -141,7 +141,7 @@ func (h *Handler) handlePause(w http.ResponseWriter, r *http.Request) {
 
 	metrics.RequestsTotal.WithLabelValues("pause", "success").Inc()
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]string{"status": "paused"})
+	_ = json.NewEncoder(w).Encode(map[string]string{"status": "paused"})
 }
 
 func (h *Handler) handleResume(w http.ResponseWriter, r *http.Request) {
@@ -166,7 +166,7 @@ func (h *Handler) handleResume(w http.ResponseWriter, r *http.Request) {
 	metrics.RequestDuration.WithLabelValues("resume").Observe(time.Since(start).Seconds())
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(rt)
+	_ = json.NewEncoder(w).Encode(rt)
 }
 
 func (h *Handler) handleList(w http.ResponseWriter, r *http.Request) {
@@ -178,7 +178,7 @@ func (h *Handler) handleList(w http.ResponseWriter, r *http.Request) {
 
 	metrics.RequestsTotal.WithLabelValues("list", "success").Inc()
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(runtime.ListResponse{Runtimes: runtimes})
+	_ = json.NewEncoder(w).Encode(runtime.ListResponse{Runtimes: runtimes})
 }
 
 func (h *Handler) handleGetRuntime(w http.ResponseWriter, r *http.Request) {
@@ -196,7 +196,7 @@ func (h *Handler) handleGetRuntime(w http.ResponseWriter, r *http.Request) {
 
 	metrics.RequestsTotal.WithLabelValues("get_runtime", "success").Inc()
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(rt)
+	_ = json.NewEncoder(w).Encode(rt)
 }
 
 func (h *Handler) handleGetSession(w http.ResponseWriter, r *http.Request) {
@@ -214,7 +214,7 @@ func (h *Handler) handleGetSession(w http.ResponseWriter, r *http.Request) {
 
 	metrics.RequestsTotal.WithLabelValues("get_session", "success").Inc()
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(rt)
+	_ = json.NewEncoder(w).Encode(rt)
 }
 
 func (h *Handler) handleSessionsBatch(w http.ResponseWriter, r *http.Request) {
@@ -226,7 +226,7 @@ func (h *Handler) handleSessionsBatch(w http.ResponseWriter, r *http.Request) {
 
 	if len(req.Sandboxes) == 0 {
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(runtime.ListResponse{Runtimes: []runtime.Runtime{}})
+		_ = json.NewEncoder(w).Encode(runtime.ListResponse{Runtimes: []runtime.Runtime{}})
 		return
 	}
 
@@ -250,13 +250,13 @@ func (h *Handler) handleSessionsBatch(w http.ResponseWriter, r *http.Request) {
 
 	metrics.RequestsTotal.WithLabelValues("sessions_batch", "success").Inc()
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(runtime.ListResponse{Runtimes: runtimes})
+	_ = json.NewEncoder(w).Encode(runtime.ListResponse{Runtimes: runtimes})
 }
 
 func (h *Handler) handleRegistryPrefix(w http.ResponseWriter, r *http.Request) {
 	metrics.RequestsTotal.WithLabelValues("registry_prefix", "success").Inc()
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(runtime.RegistryPrefixResponse{
+	_ = json.NewEncoder(w).Encode(runtime.RegistryPrefixResponse{
 		RegistryPrefix: h.registryPrefix,
 	})
 }
@@ -272,7 +272,7 @@ func (h *Handler) handleImageExists(w http.ResponseWriter, r *http.Request) {
 
 	metrics.RequestsTotal.WithLabelValues("image_exists", "success").Inc()
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(runtime.ImageExistsResponse{Exists: exists})
+	_ = json.NewEncoder(w).Encode(runtime.ImageExistsResponse{Exists: exists})
 }
 
 func (h *Handler) withAuth(next http.HandlerFunc) http.HandlerFunc {
@@ -297,7 +297,7 @@ func (h *Handler) apiKeyIsCorrect(provided string) bool {
 func (h *Handler) writeError(w http.ResponseWriter, status int, message string) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
-	json.NewEncoder(w).Encode(runtime.ErrorResponse{
+	_ = json.NewEncoder(w).Encode(runtime.ErrorResponse{
 		Error:   http.StatusText(status),
 		Message: message,
 	})

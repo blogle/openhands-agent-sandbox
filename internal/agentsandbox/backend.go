@@ -237,7 +237,7 @@ func (b *Backend) Start(ctx context.Context, req runtime.StartRequest) (*runtime
 	// Wait for health
 	if err := b.initClient.WaitForHealth(ctx, podIP, b.cfg.AgentServerPort, b.cfg.AgentServerInitTimeout); err != nil {
 		_ = b.extClient.SandboxClaims(b.cfg.Namespace).Delete(ctx, createdClaim.Name, metav1.DeleteOptions{})
-		return nil, fmt.Errorf("Agent Server health check failed: %w", err)
+		return nil, fmt.Errorf("agent server health check failed: %w", err)
 	}
 
 	return &runtime.Runtime{
@@ -290,7 +290,7 @@ func (b *Backend) Pause(ctx context.Context, runtimeID string) error {
 
 	sandboxName := claim.Status.SandboxStatus.Name
 	if sandboxName == "" {
-		return fmt.Errorf("SandboxClaim has no bound Sandbox")
+		return fmt.Errorf("sandboxClaim has no bound sandbox")
 	}
 
 	// Patch to Suspended
@@ -319,12 +319,12 @@ func (b *Backend) Resume(ctx context.Context, runtimeID string) (*runtime.Runtim
 
 	sandboxName := claim.Status.SandboxStatus.Name
 	if sandboxName == "" {
-		return nil, fmt.Errorf("SandboxClaim has no bound Sandbox")
+		return nil, fmt.Errorf("sandboxClaim has no bound sandbox")
 	}
 
 	sandbox, err := b.agentsClient.Sandboxes(b.cfg.Namespace).Get(ctx, sandboxName, metav1.GetOptions{})
 	if err != nil {
-		return nil, fmt.Errorf("failed to get Sandbox: %w", err)
+		return nil, fmt.Errorf("failed to get sandbox: %w", err)
 	}
 
 	// If already running and ready, check if init is needed
@@ -352,7 +352,7 @@ func (b *Backend) Resume(ctx context.Context, runtimeID string) (*runtime.Runtim
 	// Wait for ready
 	_, podIP, err := b.waitForSandboxReady(ctx, sandboxName)
 	if err != nil {
-		return nil, fmt.Errorf("Sandbox did not become ready after resume: %w", err)
+		return nil, fmt.Errorf("sandbox did not become ready after resume: %w", err)
 	}
 
 	return b.doResumeInit(ctx, runtimeID, claim, podIP)

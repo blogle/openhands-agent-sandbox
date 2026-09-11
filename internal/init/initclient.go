@@ -62,7 +62,7 @@ func (c *Client) Init(ctx context.Context, podIP string, port int, bootstrapKey 
 	if err != nil {
 		return fmt.Errorf("init request failed: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode == http.StatusOK {
 		return nil
@@ -95,7 +95,7 @@ func (c *Client) GetStatus(ctx context.Context, podIP string, port int) (*InitSt
 	if err != nil {
 		return nil, fmt.Errorf("status request failed: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		respBody, _ := io.ReadAll(io.LimitReader(resp.Body, 4096))
@@ -159,7 +159,7 @@ func (c *Client) WaitForHealth(ctx context.Context, podIP string, port int, time
 			if err != nil {
 				continue
 			}
-			resp.Body.Close()
+			_ = resp.Body.Close()
 			if resp.StatusCode == http.StatusOK {
 				return nil
 			}

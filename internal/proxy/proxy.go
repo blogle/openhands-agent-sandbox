@@ -10,7 +10,6 @@ import (
 	"net/http/httputil"
 	"net/url"
 	"strings"
-	"sync"
 	"time"
 )
 
@@ -23,7 +22,6 @@ type PodResolver interface {
 // to the corresponding Agent Server pod.
 type Proxy struct {
 	resolver PodResolver
-	mu       sync.RWMutex
 }
 
 // New creates a new Proxy.
@@ -64,27 +62,20 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// Create reverse proxy
 	proxy := httputil.NewSingleHostReverseProxy(target)
-	proxy.Director = func(req *http.Request) {
-		req.URL.Scheme = target.Scheme
-		req.URL.Host = target.Host
-		req.URL.Path = remainingPath
-		req.URL.RawPath = ""
-		req.Host = target.Host
+	proxy.Rewrite = func(req *httputil.ProxyRequest) {
+		req.SetURL(target)
+		req.Out.URL.Path = remainingPath
+		req.Out.URL.RawPath = ""
+		req.Out.Host = target.Host
 
 		// Remove management headers that shouldn't be forwarded
-		req.Header.Del("X-API-Key")
-	}
-
-	// Handle WebSocket upgrades
-	proxy.ModifyResponse = func(resp *http.Response) error {
-		// Pass through streaming/WebSocket responses
-		return nil
+		req.Out.Header.Del("X-API-Key")
 	}
 
 	// Custom error handler
 	proxy.ErrorHandler = func(w http.ResponseWriter, r *http.Request, err error) {
 		slog.Error("proxy error", "runtime_id", runtimeID, "error", err)
-		http.Error(w, "proxy error: "+err.Error(), http.StatusBadGateway)
+		http.Error(w, "bad gateway", http.StatusBadGateway)
 	}
 
 	proxy.ServeHTTP(w, r)

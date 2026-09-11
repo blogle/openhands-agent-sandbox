@@ -130,7 +130,7 @@ func TestHealth(t *testing.T) {
 		t.Fatalf("expected 200, got %d", rr.Code)
 	}
 	var resp map[string]string
-	json.Unmarshal(rr.Body.Bytes(), &resp)
+	_ = json.Unmarshal(rr.Body.Bytes(), &resp)
 	if resp["status"] != "ok" {
 		t.Fatalf("expected status ok, got %+v", resp)
 	}
@@ -165,7 +165,7 @@ func TestStartValid(t *testing.T) {
 		t.Fatalf("expected 200, got %d: %s", rr.Code, rr.Body.String())
 	}
 	var rt runtime.Runtime
-	json.Unmarshal(rr.Body.Bytes(), &rt)
+	_ = json.Unmarshal(rr.Body.Bytes(), &rt)
 	if rt.SessionID != "s1" || rt.RuntimeID == "" {
 		t.Fatalf("unexpected runtime: %+v", rt)
 	}
@@ -188,7 +188,7 @@ func TestStartMissingSessionID(t *testing.T) {
 
 func TestGetSession(t *testing.T) {
 	_, backend, mux := setupTest()
-	backend.Start(context.Background(), runtime.StartRequest{SessionID: "s2"})
+	_, _ = backend.Start(context.Background(), runtime.StartRequest{SessionID: "s2"})
 
 	rr := httptest.NewRecorder()
 	mux.ServeHTTP(rr, authReq("GET", "/sessions/s2", ""))
@@ -196,7 +196,7 @@ func TestGetSession(t *testing.T) {
 		t.Fatalf("expected 200, got %d: %s", rr.Code, rr.Body.String())
 	}
 	var rt runtime.Runtime
-	json.Unmarshal(rr.Body.Bytes(), &rt)
+	_ = json.Unmarshal(rr.Body.Bytes(), &rt)
 	if rt.SessionID != "s2" {
 		t.Fatalf("expected session s2, got %s", rt.SessionID)
 	}
@@ -219,7 +219,7 @@ func TestRegistryPrefix(t *testing.T) {
 		t.Fatalf("expected 200, got %d", rr.Code)
 	}
 	var resp runtime.RegistryPrefixResponse
-	json.Unmarshal(rr.Body.Bytes(), &resp)
+	_ = json.Unmarshal(rr.Body.Bytes(), &resp)
 	if resp.RegistryPrefix != "ghcr.io/openhands" {
 		t.Fatalf("unexpected prefix: %s", resp.RegistryPrefix)
 	}
@@ -233,7 +233,7 @@ func TestImageExistsKnown(t *testing.T) {
 		t.Fatalf("expected 200, got %d", rr.Code)
 	}
 	var resp runtime.ImageExistsResponse
-	json.Unmarshal(rr.Body.Bytes(), &resp)
+	_ = json.Unmarshal(rr.Body.Bytes(), &resp)
 	if !resp.Exists {
 		t.Fatal("expected exists=true for known image")
 	}
@@ -247,7 +247,7 @@ func TestImageExistsUnknown(t *testing.T) {
 		t.Fatalf("expected 200, got %d", rr.Code)
 	}
 	var resp runtime.ImageExistsResponse
-	json.Unmarshal(rr.Body.Bytes(), &resp)
+	_ = json.Unmarshal(rr.Body.Bytes(), &resp)
 	if resp.Exists {
 		t.Fatal("expected exists=false for unknown image")
 	}
@@ -271,8 +271,8 @@ func TestStop(t *testing.T) {
 
 func TestList(t *testing.T) {
 	_, backend, mux := setupTest()
-	backend.Start(context.Background(), runtime.StartRequest{SessionID: "s4"})
-	backend.Start(context.Background(), runtime.StartRequest{SessionID: "s5"})
+	_, _ = backend.Start(context.Background(), runtime.StartRequest{SessionID: "s4"})
+	_, _ = backend.Start(context.Background(), runtime.StartRequest{SessionID: "s5"})
 
 	rr := httptest.NewRecorder()
 	mux.ServeHTTP(rr, authReq("GET", "/list", ""))
@@ -280,7 +280,7 @@ func TestList(t *testing.T) {
 		t.Fatalf("expected 200, got %d", rr.Code)
 	}
 	var resp runtime.ListResponse
-	json.Unmarshal(rr.Body.Bytes(), &resp)
+	_ = json.Unmarshal(rr.Body.Bytes(), &resp)
 	if len(resp.Runtimes) != 2 {
 		t.Fatalf("expected 2 runtimes, got %d", len(resp.Runtimes))
 	}
