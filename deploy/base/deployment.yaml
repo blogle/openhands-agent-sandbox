@@ -26,7 +26,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: adapter
-          image: openhands-agent-sandbox-runtime:latest
+          image: ghcr.io/blogle/openhands-agent-sandbox:0.1.0
           ports:
             - containerPort: 8080
               name: http
