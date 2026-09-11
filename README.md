@@ -44,7 +44,7 @@ kubectl create secret generic openhands-runtime-secrets \
   -n openhands-sandboxes \
   --from-literal=api-key=$(openssl rand -hex 32) \
   --from-literal=bootstrap-secret=$(openssl rand -hex 32) \
-  --from-literal=server-image=ghcr.io/openhands/agent-server:latest
+  --from-literal=server-image=ghcr.io/openhands/agent-canvas:1.16.0
 
 kubectl create secret generic openhands-bootstrap-key \
   -n openhands-sandboxes \
@@ -65,7 +65,7 @@ from openhands.sdk.workspace.remote_api.workspace import APIRemoteWorkspace
 workspace = APIRemoteWorkspace(
     runtime_api_url="https://openhands-runtime.example.com",
     runtime_api_key="<your-api-key>",
-    server_image="ghcr.io/openhands/agent-server:latest",
+    server_image="ghcr.io/openhands/agent-canvas:1.16.0",
 )
 ```
 

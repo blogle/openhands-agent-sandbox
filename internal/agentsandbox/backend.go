@@ -192,7 +192,6 @@ func (b *Backend) Start(ctx context.Context, req runtime.StartRequest) (*runtime
 			WarmPoolRef: extv1beta1.SandboxWarmPoolRef{
 				Name: poolName,
 			},
-			Env: buildClaimEnv(req),
 		},
 	}
 
@@ -673,14 +672,6 @@ func (b *Backend) createRuntimeSecret(ctx context.Context, claim *extv1beta1.San
 
 	_, err = b.coreClient.CoreV1().Secrets(b.cfg.Namespace).Create(ctx, secret, metav1.CreateOptions{})
 	return err
-}
-
-func buildClaimEnv(req runtime.StartRequest) []extv1beta1.EnvVar {
-	var envVars []extv1beta1.EnvVar
-	for k, v := range req.Environment {
-		envVars = append(envVars, extv1beta1.EnvVar{Name: k, Value: v})
-	}
-	return envVars
 }
 
 func isSandboxReady(sandbox *sandboxv1beta1.Sandbox) bool {

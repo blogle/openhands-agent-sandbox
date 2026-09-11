@@ -32,7 +32,7 @@ kubectl create secret generic openhands-runtime-secrets \
   -n openhands-sandboxes \
   --from-literal=api-key=$(openssl rand -hex 32) \
   --from-literal=bootstrap-secret=$(openssl rand -hex 32) \
-  --from-literal=server-image=ghcr.io/openhands/agent-server:latest
+  --from-literal=server-image=ghcr.io/openhands/agent-canvas:1.16.0
 ```
 
 Also create the bootstrap key secret referenced by the SandboxTemplate:

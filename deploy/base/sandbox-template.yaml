@@ -20,7 +20,9 @@ spec:
           type: RuntimeDefault
       containers:
         - name: agent-server
-          image: ghcr.io/openhands/agent-server:latest
+          # Agent Canvas includes the standalone Agent Server binary. Pin the
+          # profile image in a cluster overlay before production deployment.
+          image: ghcr.io/openhands/agent-canvas:1.16.0
           command:
             - /usr/local/bin/openhands-agent-server
             - --port

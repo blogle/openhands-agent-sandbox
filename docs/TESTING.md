@@ -51,8 +51,17 @@ These require an existing Kubernetes cluster with agent-sandbox installed.
 ```bash
 export RUN_LIVE_E2E=1
 export LIVE_TEST_NAMESPACE=openhands-runtime-e2e
+export RUNTIME_API_URL=https://openhands-runtime.example.com
+export RUNTIME_API_KEY=<runtime-api-key>
+export OPENHANDS_SERVER_IMAGE=ghcr.io/openhands/agent-canvas:1.16.0
 make test-live
 ```
+
+The lifecycle test creates an adapter-labeled runtime and verifies claim
+allocation, deferred init, proxy health, `/workspace` persistence across
+pause/resume, and claim cleanup. Set `RUNTIME_PROXY_URL` when the management
+URL is a local port-forward but the returned public runtime URL is not
+reachable from the test runner.
 
 ## Optional OpenHands Compatibility Test
 
