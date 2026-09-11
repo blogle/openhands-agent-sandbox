@@ -1,0 +1,77 @@
+apiVersion: extensions.agents.x-k8s.io/v1beta1
+kind: SandboxTemplate
+metadata:
+  name: openhands-default
+  namespace: openhands-sandboxes
+  labels:
+    app.kubernetes.io/name: openhands-agent-server
+    app.kubernetes.io/managed-by: openhands-agent-sandbox-runtime
+spec:
+  podTemplate:
+    spec:
+      restartPolicy: Always
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: agent-server
+          image: ghcr.io/openhands/agent-server:latest
+          command:
+            - /usr/local/bin/openhands-agent-server
+            - --port
+            - "60000"
+          env:
+            - name: OH_DEFERRED_INIT
+              value: "true"
+            - name: OH_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: openhands-bootstrap-key
+                  key: secret-key
+          ports:
+            - containerPort: 60000
+              name: agent
+              protocol: TCP
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: agent
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            failureThreshold: 120
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: agent
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            failureThreshold: 6
+          resources:
+            requests:
+              cpu: 1000m
+              memory: 2048Mi
+            limits:
+              cpu: 2000m
+              memory: 4096Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - name: workspace
+              mountPath: /workspace
+  volumeClaimTemplates:
+    - metadata:
+        name: workspace
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 20Gi

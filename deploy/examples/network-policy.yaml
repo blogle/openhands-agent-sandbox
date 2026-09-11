@@ -1,0 +1,32 @@
+# Example NetworkPolicy for restricting Agent Server ingress.
+# Apply this to the openhands-sandboxes namespace to limit
+# which sources can reach Agent Server pods on port 60000.
+#
+# NOTE: Egress policy is intentionally left open. Operators should
+# add egress restrictions based on their trust model (allow Git hosts,
+# package registries, MCP endpoints, LLM APIs as needed).
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-runtime-adapter-ingress
+  namespace: openhands-sandboxes
+  labels:
+    app.kubernetes.io/managed-by: openhands-agent-sandbox-runtime
+spec:
+  podSelector:
+    matchLabels:
+      agents.x-k8s.io/warm-pool-sandbox: openhands-default
+  policyTypes:
+    - Ingress
+  ingress:
+    # Allow the runtime adapter to reach Agent Server on port 60000
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: openhands-sandboxes
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: openhands-runtime-adapter
+      ports:
+        - port: 60000
+          protocol: TCP

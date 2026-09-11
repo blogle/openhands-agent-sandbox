@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: openhands-runtime-adapter
+  namespace: openhands-sandboxes
+  labels:
+    app.kubernetes.io/name: openhands-runtime-adapter
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: openhands-runtime-adapter
+  ports:
+    - port: 80
+      targetPort: http
+      protocol: TCP
+      name: http

@@ -1,0 +1,15 @@
+# Binaries
+/runtime-api
+/bin/
+
+# Nix
+result
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
