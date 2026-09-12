@@ -25,6 +25,8 @@ spec:
           image: ghcr.io/openhands/agent-canvas:1.16.0
           command:
             - /usr/local/bin/openhands-agent-server
+            - --host
+            - "0.0.0.0"
             - --port
             - "60000"
           env:

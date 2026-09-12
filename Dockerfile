@@ -1,26 +1,30 @@
-# Build stage
-FROM golang:1.26-alpine AS builder
+# syntax=docker/dockerfile:1.7
 
-WORKDIR /build
+# Build on the runner's native architecture. Go cross-compiles this static
+# binary, avoiding slow QEMU emulation for the arm64 release image.
+FROM --platform=$BUILDPLATFORM golang:1.26-alpine AS builder
 
-# Copy go.mod and go.sum first for caching
+ARG TARGETOS
+ARG TARGETARCH
+
+WORKDIR /src
+
 COPY go.mod go.sum ./
-RUN go mod download
+RUN --mount=type=cache,target=/go/pkg/mod \
+    go mod download
 
-# Copy source
 COPY . .
+RUN --mount=type=cache,target=/go/pkg/mod \
+    --mount=type=cache,target=/root/.cache/go-build \
+    CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build \
+      -trimpath \
+      -ldflags="-s -w" \
+      -o /out/runtime-api \
+      ./cmd/runtime-api
 
-# Build static binary
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
-    -trimpath \
-    -ldflags="-s -w" \
-    -o /runtime-api \
-    ./cmd/runtime-api
-
-# Runtime stage
 FROM gcr.io/distroless/static:nonroot
 
-COPY --from=builder /runtime-api /runtime-api
+COPY --from=builder /out/runtime-api /runtime-api
 
 USER 65532:65532
 

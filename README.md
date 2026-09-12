@@ -90,6 +90,10 @@ make lint       # Run linters
 make build      # Build binary
 ```
 
+The release workflow builds `linux/amd64` and `linux/arm64` from a native Go
+builder using Go cross-compilation and GitHub Actions Buildx caches. It does
+not emulate the target architecture with QEMU during compilation.
+
 ## License
 
 Apache-2.0
