@@ -60,22 +60,19 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		Host:   targetHost,
 	}
 
-	// Create reverse proxy
-	proxy := httputil.NewSingleHostReverseProxy(target)
-	proxy.Rewrite = func(req *httputil.ProxyRequest) {
-		req.SetURL(target)
-		req.Out.URL.Path = remainingPath
-		req.Out.URL.RawPath = ""
-		req.Out.Host = target.Host
-
-		// Remove management headers that shouldn't be forwarded
-		req.Out.Header.Del("X-API-Key")
-	}
-
-	// Custom error handler
-	proxy.ErrorHandler = func(w http.ResponseWriter, r *http.Request, err error) {
-		slog.Error("proxy error", "runtime_id", runtimeID, "error", err)
-		http.Error(w, "bad gateway", http.StatusBadGateway)
+	// Create reverse proxy with Rewrite only (no Director).
+	proxy := &httputil.ReverseProxy{
+		Rewrite: func(req *httputil.ProxyRequest) {
+			req.SetURL(target)
+			req.Out.URL.Path = remainingPath
+			req.Out.URL.RawPath = ""
+			req.Out.Host = target.Host
+			req.Out.Header.Del("X-API-Key")
+		},
+		ErrorHandler: func(w http.ResponseWriter, r *http.Request, err error) {
+			slog.Error("proxy error", "runtime_id", runtimeID, "error", err)
+			http.Error(w, "bad gateway", http.StatusBadGateway)
+		},
 	}
 
 	proxy.ServeHTTP(w, r)
