@@ -120,6 +120,16 @@ func TestRuntime_JSON(t *testing.T) {
 	}
 }
 
+func TestRuntimeFailedStatus_JSON(t *testing.T) {
+	data, err := json.Marshal(Runtime{Status: StatusFailed})
+	if err != nil {
+		t.Fatalf("marshal error: %v", err)
+	}
+	if string(data) != `{"runtime_id":"","session_id":"","url":"","status":"error","pod_status":""}` {
+		t.Fatalf("expected failed status to serialize as error, got %s", data)
+	}
+}
+
 func TestErrorResponse_JSON(t *testing.T) {
 	errResp := ErrorResponse{
 		Error:   "Bad Request",

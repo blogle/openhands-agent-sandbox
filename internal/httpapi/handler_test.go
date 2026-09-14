@@ -285,3 +285,115 @@ func TestList(t *testing.T) {
 		t.Fatalf("expected 2 runtimes, got %d", len(resp.Runtimes))
 	}
 }
+
+func TestListEmptyReturnsJSONArray(t *testing.T) {
+	_, _, mux := setupTest()
+	rr := httptest.NewRecorder()
+	mux.ServeHTTP(rr, authReq("GET", "/list", ""))
+	if rr.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d", rr.Code)
+	}
+	if strings.Contains(rr.Body.String(), `"runtimes":null`) {
+		t.Fatalf("empty list serialized as null: %s", rr.Body.String())
+	}
+	var resp map[string]json.RawMessage
+	if err := json.Unmarshal(rr.Body.Bytes(), &resp); err != nil {
+		t.Fatalf("invalid JSON: %v", err)
+	}
+	var runtimes []runtime.Runtime
+	if err := json.Unmarshal(resp["runtimes"], &runtimes); err != nil {
+		t.Fatalf("runtimes is not an array: %v", err)
+	}
+	if len(runtimes) != 0 {
+		t.Fatalf("expected no runtimes, got %d", len(runtimes))
+	}
+}
+
+func TestSessionsBatchGetEmpty(t *testing.T) {
+	_, _, mux := setupTest()
+	rr := httptest.NewRecorder()
+	mux.ServeHTTP(rr, authReq("GET", "/sessions/batch", ""))
+	if rr.Code != http.StatusOK || strings.TrimSpace(rr.Body.String()) != "[]" {
+		t.Fatalf("expected 200 and [], got %d: %s", rr.Code, rr.Body.String())
+	}
+}
+
+func TestSessionsBatchGetKnown(t *testing.T) {
+	_, backend, mux := setupTest()
+	_, _ = backend.Start(context.Background(), runtime.StartRequest{SessionID: "session-a"})
+	_, _ = backend.Start(context.Background(), runtime.StartRequest{SessionID: "session-b"})
+
+	rr := httptest.NewRecorder()
+	mux.ServeHTTP(rr, authReq("GET", "/sessions/batch?ids=session-a&ids=session-b", ""))
+	if rr.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d: %s", rr.Code, rr.Body.String())
+	}
+	var runtimes []runtime.Runtime
+	if err := json.Unmarshal(rr.Body.Bytes(), &runtimes); err != nil {
+		t.Fatalf("invalid response: %v", err)
+	}
+	if len(runtimes) != 2 || runtimes[0].SessionID != "session-a" || runtimes[1].SessionID != "session-b" {
+		t.Fatalf("unexpected runtimes: %+v", runtimes)
+	}
+}
+
+func TestSessionsBatchGetMixedKnownUnknown(t *testing.T) {
+	_, backend, mux := setupTest()
+	_, _ = backend.Start(context.Background(), runtime.StartRequest{SessionID: "session-a"})
+
+	rr := httptest.NewRecorder()
+	mux.ServeHTTP(rr, authReq("GET", "/sessions/batch?ids=session-a&ids=missing", ""))
+	if rr.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d: %s", rr.Code, rr.Body.String())
+	}
+	var runtimes []runtime.Runtime
+	if err := json.Unmarshal(rr.Body.Bytes(), &runtimes); err != nil {
+		t.Fatalf("invalid response: %v", err)
+	}
+	if len(runtimes) != 1 || runtimes[0].SessionID != "session-a" {
+		t.Fatalf("unexpected runtimes: %+v", runtimes)
+	}
+}
+
+func TestSessionsBatchGetDeduplicates(t *testing.T) {
+	_, backend, mux := setupTest()
+	_, _ = backend.Start(context.Background(), runtime.StartRequest{SessionID: "session-a"})
+
+	rr := httptest.NewRecorder()
+	mux.ServeHTTP(rr, authReq("GET", "/sessions/batch?ids=session-a&ids=session-a", ""))
+	var runtimes []runtime.Runtime
+	if err := json.Unmarshal(rr.Body.Bytes(), &runtimes); err != nil {
+		t.Fatalf("invalid response: %v", err)
+	}
+	if len(runtimes) != 1 {
+		t.Fatalf("expected one runtime, got %d", len(runtimes))
+	}
+}
+
+func TestSessionsBatchGetRequiresAuth(t *testing.T) {
+	_, _, mux := setupTest()
+	rr := httptest.NewRecorder()
+	mux.ServeHTTP(rr, httptest.NewRequest("GET", "/sessions/batch", nil))
+	if rr.Code != http.StatusUnauthorized {
+		t.Fatalf("expected 401, got %d", rr.Code)
+	}
+}
+
+func TestSessionsBatchPostStillWorks(t *testing.T) {
+	_, backend, mux := setupTest()
+	_, _ = backend.Start(context.Background(), runtime.StartRequest{SessionID: "session-a"})
+
+	rr := httptest.NewRecorder()
+	body := `{"sandboxes":{"sandbox-a":{"session_id":"session-a","conversation_ids":[]}}}`
+	mux.ServeHTTP(rr, authReq("POST", "/sessions/batch", body))
+	if rr.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d: %s", rr.Code, rr.Body.String())
+	}
+	var response runtime.ListResponse
+	if err := json.Unmarshal(rr.Body.Bytes(), &response); err != nil {
+		t.Fatalf("invalid response: %v", err)
+	}
+	if len(response.Runtimes) != 1 || response.Runtimes[0].SessionID != "session-a" {
+		t.Fatalf("unexpected response: %+v", response)
+	}
+}

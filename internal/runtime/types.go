@@ -17,7 +17,7 @@ const (
 	StatusPaused   RuntimeStatus = "paused"
 	StatusStarting RuntimeStatus = "starting"
 	StatusStopping RuntimeStatus = "stopping"
-	StatusFailed   RuntimeStatus = "failed"
+	StatusFailed   RuntimeStatus = "error"
 )
 
 // PodStatus represents the observed pod status.

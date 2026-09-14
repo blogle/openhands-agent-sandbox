@@ -431,7 +431,7 @@ func (b *Backend) List(ctx context.Context) ([]runtime.Runtime, error) {
 		return nil, fmt.Errorf("failed to list SandboxClaims: %w", err)
 	}
 
-	var runtimes []runtime.Runtime
+	runtimes := make([]runtime.Runtime, 0, len(claims.Items))
 	for i := range claims.Items {
 		rt, err := b.runtimeFromClaim(ctx, &claims.Items[i])
 		if err != nil {

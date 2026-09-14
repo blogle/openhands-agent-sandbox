@@ -53,6 +53,7 @@ func (h *Handler) RegisterRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("GET /runtime/{runtime_id}", h.withAuth(h.handleGetRuntime))
 	mux.HandleFunc("GET /sessions/{session_id}", h.withAuth(h.handleGetSession))
 	mux.HandleFunc("POST /sessions/batch", h.withAuth(h.handleSessionsBatch))
+	mux.HandleFunc("GET /sessions/batch", h.withAuth(h.handleSessionsBatchGet))
 	mux.HandleFunc("GET /registry_prefix", h.withAuth(h.handleRegistryPrefix))
 	mux.HandleFunc("GET /image_exists", h.withAuth(h.handleImageExists))
 }
@@ -175,6 +176,9 @@ func (h *Handler) handleList(w http.ResponseWriter, r *http.Request) {
 		h.handleBackendError(w, "list", err)
 		return
 	}
+	if runtimes == nil {
+		runtimes = []runtime.Runtime{}
+	}
 
 	metrics.RequestsTotal.WithLabelValues("list", "success").Inc()
 	w.Header().Set("Content-Type", "application/json")
@@ -239,7 +243,7 @@ func (h *Handler) handleSessionsBatch(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Look up each session
-	var runtimes []runtime.Runtime
+	runtimes := make([]runtime.Runtime, 0)
 	for sessionID := range sessionIDs {
 		rt, err := h.backend.GetBySession(r.Context(), sessionID)
 		if err != nil {
@@ -251,6 +255,39 @@ func (h *Handler) handleSessionsBatch(w http.ResponseWriter, r *http.Request) {
 	metrics.RequestsTotal.WithLabelValues("sessions_batch", "success").Inc()
 	w.Header().Set("Content-Type", "application/json")
 	_ = json.NewEncoder(w).Encode(runtime.ListResponse{Runtimes: runtimes})
+}
+
+func (h *Handler) handleSessionsBatchGet(w http.ResponseWriter, r *http.Request) {
+	requestedIDs := r.URL.Query()["ids"]
+	seen := make(map[string]struct{}, len(requestedIDs))
+	sessionIDs := make([]string, 0, len(requestedIDs))
+	for _, sessionID := range requestedIDs {
+		if sessionID == "" {
+			continue
+		}
+		if _, ok := seen[sessionID]; ok {
+			continue
+		}
+		seen[sessionID] = struct{}{}
+		sessionIDs = append(sessionIDs, sessionID)
+	}
+
+	runtimes := make([]runtime.Runtime, 0, len(sessionIDs))
+	for _, sessionID := range sessionIDs {
+		rt, err := h.backend.GetBySession(r.Context(), sessionID)
+		if err != nil {
+			if strings.Contains(err.Error(), "not found") {
+				continue
+			}
+			h.handleBackendError(w, "sessions_batch", err)
+			return
+		}
+		runtimes = append(runtimes, *rt)
+	}
+
+	metrics.RequestsTotal.WithLabelValues("sessions_batch", "success").Inc()
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(runtimes)
 }
 
 func (h *Handler) handleRegistryPrefix(w http.ResponseWriter, r *http.Request) {
